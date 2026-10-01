@@ -1,0 +1,20 @@
+# Poornima Tax Solution
+> Tax, GST and compliance services for individuals, professionals, startups and businesses in India. Phone +91 81713 06923, info@poornimataxsolutions.com.
+
+## Services
+- [Income Tax Return Filing](https://poornimataxsolutions.com/services/income-tax-return-filing)
+- [Tax Planning & Advisory](https://poornimataxsolutions.com/services/tax-planning-advisory)
+- [TDS Compliance & Refunds](https://poornimataxsolutions.com/services/tds-compliance-refunds)
+- [Business & Corporate Taxation](https://poornimataxsolutions.com/services/business-corporate-taxation)
+- [GST Registration & Filing](https://poornimataxsolutions.com/services/gst-registration-filing)
+- [PAN Services](https://poornimataxsolutions.com/services/pan-services)
+- [FSSAI License](https://poornimataxsolutions.com/services/fssai-license)
+- [Accounting & Bookkeeping](https://poornimataxsolutions.com/services/accounting-bookkeeping)
+- [Firm Registration](https://poornimataxsolutions.com/services/firm-registration)
+- [Trademark Registration](https://poornimataxsolutions.com/services/trademark-registration)
+- [MSME (Udyam) Registration](https://poornimataxsolutions.com/services/msme-udyam-registration)
+
+## Pages
+- [About and Qualifications](https://poornimataxsolutions.com/about)
+- [Insights](https://poornimataxsolutions.com/blog)
+- [Contact](https://poornimataxsolutions.com/contact)
