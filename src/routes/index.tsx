@@ -16,7 +16,7 @@ import {
   Users,
 } from "lucide-react";
 
-import heroImg from "@/assets/img.png";
+import heroImg from "@/assets/img.webp";
 import { CtaBand } from "@/components/site/CtaBand";
 import { FaqList } from "@/components/site/FaqList";
 import { Section, SectionHeading } from "@/components/site/Section";

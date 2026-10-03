@@ -15,4 +15,7 @@ export default defineConfig({
   nitro: {
     preset: isVercel ? "vercel" : undefined,
   },
+  vite: {
+    server: { port: 8080 },
+  },
 });
