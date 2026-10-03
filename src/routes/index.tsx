@@ -147,8 +147,8 @@ function Home() {
           <img
             src={heroImg}
             alt="Poornima Tax Solution tax and compliance consultant in Mathura"
-            width={768}
-            height={922}
+            width={800}
+            height={960}
             className="aspect-[4/3] w-full rounded-sm object-cover object-center shadow-lg"
           />
         </div>
