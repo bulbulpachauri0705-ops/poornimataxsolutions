@@ -10,15 +10,11 @@ import {
   TrendingUp,
   Users,
 } from "lucide-react";
+import { useEffect, useState } from "react";
 import { Bar, BarChart, ResponsiveContainer, Tooltip, XAxis, YAxis } from "recharts";
 
-import {
-  dashboardStats,
-  leads,
-  monthlyLeads,
-  recentActivity,
-  topServices,
-} from "@/data/admin";
+import { getLeadStats, getLeads } from "@/lib/leads.server";
+import { adminBlogs, dashboardStats } from "@/data/admin";
 
 export const Route = createLazyFileRoute("/admin/")({
   component: AdminDashboard,
@@ -82,8 +78,26 @@ function ProgressBar({ value, color = GOLD }: { value: number; color?: string })
   );
 }
 
+type Stats = Awaited<ReturnType<typeof getLeadStats>>;
+type Lead = { id: string; name: string; service: string; status: string; created_at: string };
+
 function AdminDashboard() {
-  const recentLeads = leads.slice(0, 5);
+  const [stats, setStats] = useState<Stats | null>(null);
+  const [recentLeads, setRecentLeads] = useState<Lead[]>([]);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    Promise.all([getLeadStats(), getLeads()])
+      .then(([s, leads]) => {
+        setStats(s);
+        setRecentLeads((leads as Lead[]).slice(0, 5));
+      })
+      .catch(console.error)
+      .finally(() => setLoading(false));
+  }, []);
+
+  const publishedBlogs = adminBlogs.filter((b) => b.status === "Published").length;
+
   return (
     <div className="space-y-5" style={{ color: NAVY }}>
       <div className="flex items-center justify-between">
@@ -96,20 +110,21 @@ function AdminDashboard() {
         </span>
       </div>
 
+      {/* Lead stat cards */}
       <div className="grid gap-4 grid-cols-2 sm:grid-cols-3 xl:grid-cols-6">
-        <StatCard label="Total Clients"  value={dashboardStats.totalClients}  icon={Users}         sub="+4 this month" />
-        <StatCard label="Total Leads"    value={dashboardStats.totalLeads}    icon={TrendingUp}    sub="+8 this week"  accent="#7C3AED" />
-        <StatCard label="New Inquiries"  value={dashboardStats.newInquiries}  icon={MessageSquare} sub="Unread"        accent="#0EA5E9" />
-        <StatCard label="Appointments"   value={dashboardStats.appointments}  icon={Calendar}      sub="This week"    accent="#10B981" />
-        <StatCard label="Blog Posts"     value={dashboardStats.blogPosts}     icon={BookOpen}      sub="3 published"  accent="#F59E0B" />
-        <StatCard label="SEO Health"     value={`${dashboardStats.seoHealth}%`} icon={Search}      sub="Good"         accent="#06B6D4" />
+        <StatCard label="Total Leads"    value={loading ? "…" : (stats?.total ?? 0)}      icon={TrendingUp}    sub="All time"        accent="#7C3AED" />
+        <StatCard label="New"            value={loading ? "…" : (stats?.new ?? 0)}         icon={MessageSquare} sub="Awaiting action" accent="#0EA5E9" />
+        <StatCard label="In Progress"    value={loading ? "…" : (stats?.inProgress ?? 0)}  icon={Activity}      sub="Being handled"   accent="#F59E0B" />
+        <StatCard label="Converted"      value={loading ? "…" : (stats?.converted ?? 0)}   icon={Users}         sub="Clients won"     accent="#10B981" />
+        <StatCard label="Today's Leads"  value={loading ? "…" : (stats?.today ?? 0)}       icon={Calendar}      sub="Last 24 hours"   accent={GOLD} />
+        <StatCard label="This Month"     value={loading ? "…" : (stats?.thisMonth ?? 0)}   icon={FileText}      sub="Month to date"   accent="#06B6D4" />
       </div>
 
       <div className="grid gap-4 lg:grid-cols-3">
         <Card className="lg:col-span-2">
           <CardTitle>Lead Overview — Last 6 Months</CardTitle>
           <ResponsiveContainer width="100%" height={200}>
-            <BarChart data={monthlyLeads} barSize={32} margin={{ top: 4, right: 4, left: -20, bottom: 0 }}>
+            <BarChart data={stats?.monthlyLeads ?? []} barSize={32} margin={{ top: 4, right: 4, left: -20, bottom: 0 }}>
               <XAxis dataKey="month" tick={{ fill: TEXT_MUTED, fontSize: 11 }} axisLine={false} tickLine={false} />
               <YAxis tick={{ fill: TEXT_MUTED, fontSize: 11 }} axisLine={false} tickLine={false} />
               <Tooltip cursor={{ fill: `${GOLD}10` }} contentStyle={{ background: CARD, border: `1px solid ${BORDER}`, borderRadius: 8, color: NAVY, fontSize: 12, boxShadow: SHADOW }} />
@@ -121,14 +136,18 @@ function AdminDashboard() {
           <CardTitle>Lead Status</CardTitle>
           <div className="space-y-4">
             {(["New", "In Progress", "Converted", "Lost"] as const).map((status) => {
-              const count = leads.filter((l) => l.status === status).length;
-              const pct = Math.round((count / leads.length) * 100);
+              const count = status === "New" ? (stats?.new ?? 0)
+                : status === "In Progress" ? (stats?.inProgress ?? 0)
+                : status === "Converted" ? (stats?.converted ?? 0)
+                : (stats?.lost ?? 0);
+              const total = stats?.total ?? 1;
+              const pct = total ? Math.round((count / total) * 100) : 0;
               const c = statusColors[status]!;
               return (
                 <div key={status}>
                   <div className="mb-1.5 flex items-center justify-between text-xs">
                     <span className="font-medium" style={{ color: NAVY }}>{status}</span>
-                    <span className="font-semibold" style={{ color: c.text }}>{count}</span>
+                    <span className="font-semibold" style={{ color: c.text }}>{loading ? "…" : count}</span>
                   </div>
                   <ProgressBar value={pct} color={c.text} />
                 </div>
@@ -154,14 +173,22 @@ function AdminDashboard() {
                 </tr>
               </thead>
               <tbody>
-                {recentLeads.map((lead) => (
-                  <tr key={lead.id} className="transition-colors hover:bg-gray-50" style={{ borderBottom: `1px solid ${BORDER}` }}>
-                    <td className="px-5 py-3 font-medium" style={{ color: NAVY }}>{lead.name}</td>
-                    <td className="px-5 py-3" style={{ color: TEXT_MUTED, maxWidth: 140 }}><span className="block truncate">{lead.service.split(" ").slice(0, 3).join(" ")}</span></td>
-                    <td className="px-5 py-3" style={{ color: TEXT_MUTED }}>{lead.date}</td>
-                    <td className="px-5 py-3"><StatusBadge status={lead.status} /></td>
-                  </tr>
-                ))}
+                {loading ? (
+                  <tr><td colSpan={4} className="px-5 py-6 text-center" style={{ color: TEXT_MUTED }}>Loading…</td></tr>
+                ) : recentLeads.length === 0 ? (
+                  <tr><td colSpan={4} className="px-5 py-6 text-center" style={{ color: TEXT_MUTED }}>No leads yet.</td></tr>
+                ) : (
+                  recentLeads.map((lead) => (
+                    <tr key={lead.id} className="transition-colors hover:bg-gray-50" style={{ borderBottom: `1px solid ${BORDER}` }}>
+                      <td className="px-5 py-3 font-medium" style={{ color: NAVY }}>{lead.name}</td>
+                      <td className="px-5 py-3" style={{ color: TEXT_MUTED, maxWidth: 140 }}><span className="block truncate">{lead.service.split(" ").slice(0, 3).join(" ")}</span></td>
+                      <td className="px-5 py-3" style={{ color: TEXT_MUTED }}>
+                        {new Date(lead.created_at).toLocaleDateString("en-IN", { day: "2-digit", month: "short" })}
+                      </td>
+                      <td className="px-5 py-3"><StatusBadge status={lead.status} /></td>
+                    </tr>
+                  ))
+                )}
               </tbody>
             </table>
           </div>
@@ -170,31 +197,45 @@ function AdminDashboard() {
           <Card>
             <CardTitle>Top Services</CardTitle>
             <div className="space-y-3">
-              {topServices.map((s) => (
-                <div key={s.name}>
-                  <div className="mb-1 flex items-center justify-between text-xs">
-                    <span className="truncate font-medium" style={{ color: NAVY, maxWidth: "72%" }}>{s.name}</span>
-                    <span className="font-semibold" style={{ color: GOLD }}>{s.leads}</span>
+              {loading ? (
+                <p className="text-xs" style={{ color: TEXT_MUTED }}>Loading…</p>
+              ) : (stats?.topServices ?? []).length === 0 ? (
+                <p className="text-xs" style={{ color: TEXT_MUTED }}>No data yet.</p>
+              ) : (
+                (stats?.topServices ?? []).map((s) => (
+                  <div key={s.name}>
+                    <div className="mb-1 flex items-center justify-between text-xs">
+                      <span className="truncate font-medium" style={{ color: NAVY, maxWidth: "72%" }}>{s.name}</span>
+                      <span className="font-semibold" style={{ color: GOLD }}>{s.leads}</span>
+                    </div>
+                    <ProgressBar value={s.percentage} />
                   </div>
-                  <ProgressBar value={s.percentage} />
-                </div>
-              ))}
+                ))
+              )}
             </div>
           </Card>
           <Card>
-            <CardTitle>Recent Activity</CardTitle>
+            <CardTitle>This Week</CardTitle>
             <div className="space-y-3">
-              {recentActivity.map((a) => (
-                <div key={a.id} className="flex gap-3">
-                  <span className="mt-0.5 flex size-6 shrink-0 items-center justify-center rounded-full" style={{ background: `${GOLD}18` }}>
-                    <Activity className="size-3" style={{ color: GOLD }} />
-                  </span>
-                  <div>
-                    <p className="text-xs font-medium leading-snug" style={{ color: NAVY }}>{a.action}</p>
-                    <p className="mt-0.5 text-[11px]" style={{ color: TEXT_MUTED }}>{a.time}</p>
+              {[
+                { label: "Total Leads", value: stats?.thisWeek ?? 0, icon: TrendingUp },
+                { label: "New", value: stats?.new ?? 0, icon: MessageSquare },
+                { label: "Converted", value: stats?.converted ?? 0, icon: Users },
+                { label: "Blog Posts", value: adminBlogs.length, icon: BookOpen },
+              ].map((item) => {
+                const Icon = item.icon;
+                return (
+                  <div key={item.label} className="flex items-center justify-between rounded-lg px-3 py-2.5" style={{ background: BG }}>
+                    <div className="flex items-center gap-2.5">
+                      <span className="flex size-7 items-center justify-center rounded-lg" style={{ background: `${GOLD}18` }}>
+                        <Icon className="size-3.5" style={{ color: GOLD }} />
+                      </span>
+                      <span className="text-xs font-medium" style={{ color: NAVY }}>{item.label}</span>
+                    </div>
+                    <span className="text-sm font-bold" style={{ color: NAVY }}>{loading ? "…" : item.value}</span>
                   </div>
-                </div>
-              ))}
+                );
+              })}
             </div>
           </Card>
         </div>
@@ -224,7 +265,12 @@ function AdminDashboard() {
             <Link to="/admin/blogs" className="text-xs font-medium hover:underline" style={{ color: GOLD }}>Manage →</Link>
           </div>
           <div className="space-y-3">
-            {[{ label: "Total Posts", value: 4, icon: BookOpen }, { label: "Published", value: 3, icon: FileText }, { label: "Drafts", value: 1, icon: FileText }, { label: "This Month", value: 1, icon: Calendar }].map((item) => {
+            {[
+              { label: "Total Posts", value: adminBlogs.length, icon: BookOpen },
+              { label: "Published", value: publishedBlogs, icon: FileText },
+              { label: "Drafts", value: adminBlogs.length - publishedBlogs, icon: FileText },
+              { label: "This Month", value: 1, icon: Calendar },
+            ].map((item) => {
               const Icon = item.icon;
               return (
                 <div key={item.label} className="flex items-center justify-between rounded-lg px-3 py-2.5" style={{ background: BG }}>
@@ -245,7 +291,12 @@ function AdminDashboard() {
       <Card>
         <CardTitle>Quick Actions</CardTitle>
         <div className="flex flex-wrap gap-3">
-          {[{ label: "Add Lead", to: "/admin/leads", icon: TrendingUp }, { label: "New Blog Post", to: "/admin/blogs", icon: BookOpen }, { label: "Update SEO", to: "/admin/seo", icon: Search }, { label: "View Reports", to: "/admin/reports", icon: FileText }].map((action) => {
+          {[
+            { label: "View Leads", to: "/admin/leads", icon: TrendingUp },
+            { label: "New Blog Post", to: "/admin/blogs", icon: BookOpen },
+            { label: "Update SEO", to: "/admin/seo", icon: Search },
+            { label: "View Reports", to: "/admin/reports", icon: FileText },
+          ].map((action) => {
             const Icon = action.icon;
             return (
               <Link key={action.label} to={action.to} className="flex items-center gap-2 rounded-xl px-4 py-2.5 text-sm font-semibold transition-all hover:opacity-90 active:scale-95" style={{ background: NAVY, color: "#ffffff" }}>

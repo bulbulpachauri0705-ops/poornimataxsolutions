@@ -4,18 +4,17 @@
 
 [33mThe plugin "vite-tsconfig-paths" is detected. Vite now supports tsconfig paths resolution natively via the [1mresolve.tsconfigPaths[22m option. You can remove the plugin and set [1mresolve.tsconfigPaths: true[22m in your Vite config instead.[39m
 Port 8080 is in use, trying another one...
-[2m23:39:22[22m [36m[1m[vite][22m[39m [90m[2m(client)[22m[39m Re-optimizing dependencies because vite config has changed
+[2m23:02:06[22m [36m[1m[vite][22m[39m [90m[2m(client)[22m[39m Re-optimizing dependencies because vite config has changed
 
-  [32m[1mVITE[22m v8.1.5[39m  [2mready in [0m[1m6606[22m[2m[0m ms[22m
+  [32m[1mVITE[22m v8.1.5[39m  [2mready in [0m[1m6024[22m[2m[0m ms[22m
 
   [32m➜[39m  [1mLocal[22m:   [36mhttp://localhost:[1m8081[22m/[39m
-  [32m➜[39m  [1mNetwork[22m: [36mhttp://192.168.0.102:[1m8081[22m/[39m
-[2m23:39:24[22m [36m[1m[vite][22m[39m [90m[2m(client)[22m[39m [optimizer] bundling dependencies...
-File c:\Users\DELL\Desktop\Poornimatax\Frontend\src\routeTree.gen.ts was modified by another process during processing.
-File c:\Users\DELL\Desktop\Poornimatax\Frontend\src\routeTree.gen.ts was modified by another process during processing.
-File c:\Users\DELL\Desktop\Poornimatax\Frontend\src\routeTree.gen.ts was modified by another process during processing.
-File c:\Users\DELL\Desktop\Poornimatax\Frontend\src\routeTree.gen.ts was modified by another process during processing.
-File c:\Users\DELL\Desktop\Poornimatax\Frontend\src\routeTree.gen.ts was modified by another process during processing.
-File c:\Users\DELL\Desktop\Poornimatax\Frontend\src\routeTree.gen.ts was modified by another process during processing.
+  [32m➜[39m  [1mNetwork[22m: [36mhttp://192.168.0.103:[1m8081[22m/[39m
+[2m23:02:08[22m [36m[1m[vite][22m[39m [90m[2m(client)[22m[39m [optimizer] bundling dependencies...
+[2m23:04:44[22m [36m[1m[vite][22m[39m [32mvite.config.ts changed, restarting server...[39m
+[33mThe plugin "vite-tsconfig-paths" is detected. Vite now supports tsconfig paths resolution natively via the [1mresolve.tsconfigPaths[22m option. You can remove the plugin and set [1mresolve.tsconfigPaths: true[22m in your Vite config instead.[39m
+[2m23:04:48[22m [36m[1m[vite][22m[39m [90m[2m(client)[22m[39m Re-optimizing dependencies because vite config has changed
+[2m23:04:48[22m [36m[1m[vite][22m[39m server restarted.
+[2m23:04:50[22m [36m[1m[vite][22m[39m [90m[2m(client)[22m[39m [optimizer] bundling dependencies...
 
 c:\Users\DELL\Desktop\Poornimatax\Frontend>

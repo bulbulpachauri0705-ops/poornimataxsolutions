@@ -1,14 +1,29 @@
 import { createLazyFileRoute } from "@tanstack/react-router";
-import { Edit2, Eye, Search, Trash2, X } from "lucide-react";
-import { useState } from "react";
+import { Edit2, Eye, RefreshCw, Search, Trash2, X } from "lucide-react";
+import { useEffect, useState } from "react";
 
-import { leads as initialLeads, type Lead, type LeadStatus } from "@/data/admin";
+import { deleteLead, getLeads, updateLead } from "@/lib/leads.server";
+import type { LeadStatus } from "@/integrations/supabase/types";
 
 export const Route = createLazyFileRoute("/admin/leads")({
   component: AdminLeads,
 });
 
-// ── Design tokens ──────────────────────────────────────────────
+type Lead = {
+  id: string;
+  name: string;
+  phone: string;
+  email: string;
+  service: string;
+  message: string;
+  city: string | null;
+  contact_method: string | null;
+  status: LeadStatus;
+  source: string;
+  created_at: string;
+  updated_at: string;
+};
+
 const NAVY  = "#062B49";
 const GOLD  = "#D9A928";
 const CARD  = "#ffffff";
@@ -38,13 +53,39 @@ function StatusBadge({ status }: { status: LeadStatus }) {
   );
 }
 
+function formatDate(iso: string) {
+  return new Date(iso).toLocaleDateString("en-IN", {
+    day: "2-digit",
+    month: "short",
+    year: "numeric",
+  });
+}
+
 function AdminLeads() {
-  const [leads, setLeads] = useState<Lead[]>(initialLeads);
+  const [leads, setLeads] = useState<Lead[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState("");
   const [search, setSearch] = useState("");
   const [filterStatus, setFilterStatus] = useState<LeadStatus | "All">("All");
   const [viewLead, setViewLead] = useState<Lead | null>(null);
   const [editLead, setEditLead] = useState<Lead | null>(null);
   const [editForm, setEditForm] = useState<Partial<Lead>>({});
+  const [saving, setSaving] = useState(false);
+
+  async function fetchLeads() {
+    setLoading(true);
+    setError("");
+    try {
+      const data = await getLeads();
+      setLeads(data as Lead[]);
+    } catch (e) {
+      setError(e instanceof Error ? e.message : "Failed to load leads.");
+    } finally {
+      setLoading(false);
+    }
+  }
+
+  useEffect(() => { fetchLeads(); }, []);
 
   const filtered = leads.filter((l) => {
     const q = search.toLowerCase();
@@ -57,9 +98,13 @@ function AdminLeads() {
     return matchSearch && matchStatus;
   });
 
-  function handleDelete(id: string) {
-    if (confirm("Delete this lead?")) {
+  async function handleDelete(id: string) {
+    if (!confirm("Delete this lead? This cannot be undone.")) return;
+    try {
+      await deleteLead({ data: { id } });
       setLeads((prev) => prev.filter((l) => l.id !== id));
+    } catch {
+      alert("Failed to delete lead.");
     }
   }
 
@@ -68,43 +113,63 @@ function AdminLeads() {
     setEditForm({ ...lead });
   }
 
-  function saveEdit() {
+  async function saveEdit() {
     if (!editLead) return;
-    setLeads((prev) =>
-      prev.map((l) => (l.id === editLead.id ? ({ ...l, ...editForm } as Lead) : l)),
-    );
-    setEditLead(null);
+    setSaving(true);
+    try {
+      await updateLead({
+        data: {
+          id: editLead.id,
+          name: editForm.name,
+          phone: editForm.phone,
+          email: editForm.email,
+          service: editForm.service,
+          message: editForm.message,
+          status: editForm.status,
+        },
+      });
+      setLeads((prev) =>
+        prev.map((l) => (l.id === editLead.id ? ({ ...l, ...editForm } as Lead) : l)),
+      );
+      setEditLead(null);
+    } catch {
+      alert("Failed to save changes.");
+    } finally {
+      setSaving(false);
+    }
   }
 
   return (
     <div className="space-y-5">
-      {/* Header */}
-      <div>
-        <h1 className="text-xl font-bold" style={{ color: NAVY }}>Leads</h1>
-        <p className="mt-0.5 text-sm" style={{ color: MUTED }}>{leads.length} total leads</p>
+      <div className="flex items-center justify-between">
+        <div>
+          <h1 className="text-xl font-bold" style={{ color: NAVY }}>Leads</h1>
+          <p className="mt-0.5 text-sm" style={{ color: MUTED }}>{leads.length} total leads</p>
+        </div>
+        <button
+          onClick={fetchLeads}
+          className="flex items-center gap-1.5 rounded-lg px-3 py-2 text-xs font-medium transition-colors hover:bg-gray-100"
+          style={{ color: MUTED, border: `1px solid ${BORDER}`, background: CARD }}
+        >
+          <RefreshCw className="size-3.5" />
+          Refresh
+        </button>
       </div>
 
-      {/* Filters bar */}
+      {/* Filters */}
       <div
         className="flex flex-wrap items-center gap-3 rounded-xl p-4"
         style={{ background: CARD, border: `1px solid ${BORDER}`, boxShadow: SHADOW }}
       >
         <div className="relative flex-1" style={{ minWidth: 200 }}>
-          <Search
-            className="absolute left-3 top-1/2 size-4 -translate-y-1/2"
-            style={{ color: MUTED }}
-          />
+          <Search className="absolute left-3 top-1/2 size-4 -translate-y-1/2" style={{ color: MUTED }} />
           <input
             type="text"
             placeholder="Search by name, email, phone, service…"
             value={search}
             onChange={(e) => setSearch(e.target.value)}
-            className="w-full rounded-lg py-2 pl-9 pr-3 text-sm outline-none transition-colors"
-            style={{
-              background: BG,
-              border: `1px solid ${BORDER}`,
-              color: NAVY,
-            }}
+            className="w-full rounded-lg py-2 pl-9 pr-3 text-sm outline-none"
+            style={{ background: BG, border: `1px solid ${BORDER}`, color: NAVY }}
           />
         </div>
         <div className="flex flex-wrap gap-2">
@@ -130,91 +195,85 @@ function AdminLeads() {
         className="overflow-hidden rounded-xl"
         style={{ background: CARD, border: `1px solid ${BORDER}`, boxShadow: SHADOW }}
       >
-        <div className="overflow-x-auto">
-          <table className="w-full text-sm">
-            <thead>
-              <tr style={{ borderBottom: `1px solid ${BORDER}`, background: BG }}>
-                {["Name", "Phone", "Email", "Service", "Date", "Status", "Actions"].map((h) => (
-                  <th
-                    key={h}
-                    className="px-4 py-3 text-left text-xs font-semibold"
-                    style={{ color: MUTED }}
-                  >
-                    {h}
-                  </th>
-                ))}
-              </tr>
-            </thead>
-            <tbody>
-              {filtered.length === 0 ? (
-                <tr>
-                  <td
-                    colSpan={7}
-                    className="px-4 py-10 text-center text-sm"
-                    style={{ color: MUTED }}
-                  >
-                    No leads found.
-                  </td>
+        {loading ? (
+          <div className="px-4 py-16 text-center text-sm" style={{ color: MUTED }}>
+            Loading leads…
+          </div>
+        ) : error ? (
+          <div className="px-4 py-16 text-center text-sm text-red-600">{error}</div>
+        ) : (
+          <div className="overflow-x-auto">
+            <table className="w-full text-sm">
+              <thead>
+                <tr style={{ borderBottom: `1px solid ${BORDER}`, background: BG }}>
+                  {["Name", "Phone", "Email", "Service", "Date", "Status", "Actions"].map((h) => (
+                    <th key={h} className="px-4 py-3 text-left text-xs font-semibold" style={{ color: MUTED }}>
+                      {h}
+                    </th>
+                  ))}
                 </tr>
-              ) : (
-                filtered.map((lead) => (
-                  <tr
-                    key={lead.id}
-                    className="transition-colors hover:bg-gray-50"
-                    style={{ borderBottom: `1px solid ${BORDER}` }}
-                  >
-                    <td className="px-4 py-3 font-semibold" style={{ color: NAVY }}>
-                      {lead.name}
-                    </td>
-                    <td className="px-4 py-3 text-xs" style={{ color: MUTED }}>
-                      {lead.phone}
-                    </td>
-                    <td className="px-4 py-3 text-xs" style={{ color: MUTED }}>
-                      {lead.email}
-                    </td>
-                    <td className="px-4 py-3 text-xs" style={{ color: MUTED, maxWidth: 160 }}>
-                      <span className="block truncate">{lead.service}</span>
-                    </td>
-                    <td className="px-4 py-3 text-xs" style={{ color: MUTED }}>
-                      {lead.date}
-                    </td>
-                    <td className="px-4 py-3">
-                      <StatusBadge status={lead.status} />
-                    </td>
-                    <td className="px-4 py-3">
-                      <div className="flex items-center gap-1">
-                        <button
-                          onClick={() => setViewLead(lead)}
-                          className="rounded-lg p-1.5 transition-colors hover:bg-amber-50"
-                          title="View"
-                          style={{ color: GOLD }}
-                        >
-                          <Eye className="size-3.5" />
-                        </button>
-                        <button
-                          onClick={() => openEdit(lead)}
-                          className="rounded-lg p-1.5 transition-colors hover:bg-blue-50"
-                          title="Edit"
-                          style={{ color: "#1D4ED8" }}
-                        >
-                          <Edit2 className="size-3.5" />
-                        </button>
-                        <button
-                          onClick={() => handleDelete(lead.id)}
-                          className="rounded-lg p-1.5 transition-colors hover:bg-red-50"
-                          title="Delete"
-                          style={{ color: "#BE123C" }}
-                        >
-                          <Trash2 className="size-3.5" />
-                        </button>
-                      </div>
+              </thead>
+              <tbody>
+                {filtered.length === 0 ? (
+                  <tr>
+                    <td colSpan={7} className="px-4 py-10 text-center text-sm" style={{ color: MUTED }}>
+                      No leads found.
                     </td>
                   </tr>
-                ))
-              )}
-            </tbody>
-          </table>
-        </div>
+                ) : (
+                  filtered.map((lead) => (
+                    <tr
+                      key={lead.id}
+                      className="transition-colors hover:bg-gray-50"
+                      style={{ borderBottom: `1px solid ${BORDER}` }}
+                    >
+                      <td className="px-4 py-3 font-semibold" style={{ color: NAVY }}>{lead.name}</td>
+                      <td className="px-4 py-3 text-xs" style={{ color: MUTED }}>{lead.phone}</td>
+                      <td className="px-4 py-3 text-xs" style={{ color: MUTED }}>{lead.email}</td>
+                      <td className="px-4 py-3 text-xs" style={{ color: MUTED, maxWidth: 160 }}>
+                        <span className="block truncate">{lead.service}</span>
+                      </td>
+                      <td className="px-4 py-3 text-xs" style={{ color: MUTED }}>
+                        {formatDate(lead.created_at)}
+                      </td>
+                      <td className="px-4 py-3">
+                        <StatusBadge status={lead.status} />
+                      </td>
+                      <td className="px-4 py-3">
+                        <div className="flex items-center gap-1">
+                          <button
+                            onClick={() => setViewLead(lead)}
+                            className="rounded-lg p-1.5 transition-colors hover:bg-amber-50"
+                            title="View"
+                            style={{ color: GOLD }}
+                          >
+                            <Eye className="size-3.5" />
+                          </button>
+                          <button
+                            onClick={() => openEdit(lead)}
+                            className="rounded-lg p-1.5 transition-colors hover:bg-blue-50"
+                            title="Edit"
+                            style={{ color: "#1D4ED8" }}
+                          >
+                            <Edit2 className="size-3.5" />
+                          </button>
+                          <button
+                            onClick={() => handleDelete(lead.id)}
+                            className="rounded-lg p-1.5 transition-colors hover:bg-red-50"
+                            title="Delete"
+                            style={{ color: "#BE123C" }}
+                          >
+                            <Trash2 className="size-3.5" />
+                          </button>
+                        </div>
+                      </td>
+                    </tr>
+                  ))
+                )}
+              </tbody>
+            </table>
+          </div>
+        )}
       </div>
 
       {/* View Modal */}
@@ -222,20 +281,22 @@ function AdminLeads() {
         <Modal title="Lead Details" onClose={() => setViewLead(null)}>
           <dl className="space-y-3 text-sm">
             {[
-              ["ID", viewLead.id],
               ["Name", viewLead.name],
               ["Phone", viewLead.phone],
               ["Email", viewLead.email],
               ["Service", viewLead.service],
-              ["Date", viewLead.date],
+              ["City", viewLead.city ?? "—"],
+              ["Contact Method", viewLead.contact_method ?? "—"],
+              ["Source", viewLead.source],
+              ["Submitted", formatDate(viewLead.created_at)],
             ].map(([k, v]) => (
               <div key={k} className="flex gap-3">
-                <dt className="w-20 shrink-0 text-xs font-medium" style={{ color: MUTED }}>{k}</dt>
+                <dt className="w-32 shrink-0 text-xs font-medium" style={{ color: MUTED }}>{k}</dt>
                 <dd className="text-sm font-medium" style={{ color: NAVY }}>{v}</dd>
               </div>
             ))}
             <div className="flex gap-3">
-              <dt className="w-20 shrink-0 text-xs font-medium" style={{ color: MUTED }}>Status</dt>
+              <dt className="w-32 shrink-0 text-xs font-medium" style={{ color: MUTED }}>Status</dt>
               <dd><StatusBadge status={viewLead.status} /></dd>
             </div>
             <div>
@@ -257,33 +318,22 @@ function AdminLeads() {
           <div className="space-y-3">
             {(["name", "phone", "email", "service"] as const).map((field) => (
               <div key={field}>
-                <label
-                  className="mb-1 block text-xs font-medium capitalize"
-                  style={{ color: MUTED }}
-                >
+                <label className="mb-1 block text-xs font-medium capitalize" style={{ color: MUTED }}>
                   {field}
                 </label>
                 <input
                   value={(editForm[field] as string) ?? ""}
                   onChange={(e) => setEditForm((p) => ({ ...p, [field]: e.target.value }))}
                   className="w-full rounded-lg px-3 py-2 text-sm outline-none"
-                  style={{
-                    background: BG,
-                    border: `1px solid ${BORDER}`,
-                    color: NAVY,
-                  }}
+                  style={{ background: BG, border: `1px solid ${BORDER}`, color: NAVY }}
                 />
               </div>
             ))}
             <div>
-              <label className="mb-1 block text-xs font-medium" style={{ color: MUTED }}>
-                Status
-              </label>
+              <label className="mb-1 block text-xs font-medium" style={{ color: MUTED }}>Status</label>
               <select
                 value={editForm.status ?? editLead.status}
-                onChange={(e) =>
-                  setEditForm((p) => ({ ...p, status: e.target.value as LeadStatus }))
-                }
+                onChange={(e) => setEditForm((p) => ({ ...p, status: e.target.value as LeadStatus }))}
                 className="w-full rounded-lg px-3 py-2 text-sm outline-none"
                 style={{ background: BG, border: `1px solid ${BORDER}`, color: NAVY }}
               >
@@ -293,20 +343,13 @@ function AdminLeads() {
               </select>
             </div>
             <div>
-              <label className="mb-1 block text-xs font-medium" style={{ color: MUTED }}>
-                Message
-              </label>
+              <label className="mb-1 block text-xs font-medium" style={{ color: MUTED }}>Message</label>
               <textarea
                 value={(editForm.message as string) ?? ""}
                 onChange={(e) => setEditForm((p) => ({ ...p, message: e.target.value }))}
                 rows={3}
                 className="w-full rounded-lg px-3 py-2 text-sm outline-none"
-                style={{
-                  background: BG,
-                  border: `1px solid ${BORDER}`,
-                  color: NAVY,
-                  resize: "vertical",
-                }}
+                style={{ background: BG, border: `1px solid ${BORDER}`, color: NAVY, resize: "vertical" }}
               />
             </div>
             <div className="flex justify-end gap-2 pt-1">
@@ -319,10 +362,11 @@ function AdminLeads() {
               </button>
               <button
                 onClick={saveEdit}
-                className="rounded-lg px-4 py-2 text-sm font-semibold transition-opacity hover:opacity-90"
+                disabled={saving}
+                className="rounded-lg px-4 py-2 text-sm font-semibold transition-opacity hover:opacity-90 disabled:opacity-60"
                 style={{ background: NAVY, color: "#fff" }}
               >
-                Save Changes
+                {saving ? "Saving…" : "Save Changes"}
               </button>
             </div>
           </div>

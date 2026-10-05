@@ -12,6 +12,7 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { Textarea } from "@/components/ui/textarea";
+import { submitLead } from "@/lib/leads.server";
 import { services, site, telHref, waHref } from "@/data/site";
 
 type Errors = Partial<Record<"name" | "phone" | "email" | "service" | "message", string>>;
@@ -21,19 +22,21 @@ export function LeadForm() {
   const [contactMethod, setContactMethod] = useState("Phone call");
   const [errors, setErrors] = useState<Errors>({});
   const [sent, setSent] = useState(false);
+  const [submitting, setSubmitting] = useState(false);
 
-  function onSubmit(event: React.FormEvent<HTMLFormElement>) {
+  async function onSubmit(event: React.FormEvent<HTMLFormElement>) {
     event.preventDefault();
     const form = event.currentTarget;
     const data = new FormData(form);
 
-    // Honeypot: real users leave this empty.
+    // Honeypot
     if ((data.get("company_website") as string)?.trim()) return;
 
     const name = (data.get("name") as string)?.trim() ?? "";
     const phone = (data.get("phone") as string)?.trim() ?? "";
     const email = (data.get("email") as string)?.trim() ?? "";
     const message = (data.get("message") as string)?.trim() ?? "";
+    const city = (data.get("city") as string)?.trim() ?? "";
 
     const next: Errors = {};
     if (name.length < 2) next.name = "Please enter your full name.";
@@ -49,10 +52,28 @@ export function LeadForm() {
       return;
     }
 
-    setSent(true);
-    toast.success("Thank you. Your enquiry has been received.");
-    form.reset();
-    setService("");
+    setSubmitting(true);
+    try {
+      await submitLead({
+        data: {
+          name,
+          phone: phone.replace(/\D/g, "").slice(-10),
+          email,
+          service,
+          message,
+          city: city || undefined,
+          contact_method: contactMethod,
+        },
+      });
+      setSent(true);
+      toast.success("Thank you. Your enquiry has been received.");
+      form.reset();
+      setService("");
+    } catch {
+      toast.error("Something went wrong. Please try again or call us directly.");
+    } finally {
+      setSubmitting(false);
+    }
   }
 
   if (sent) {
@@ -171,8 +192,8 @@ export function LeadForm() {
         <input id="company_website" name="company_website" tabIndex={-1} autoComplete="off" />
       </div>
 
-      <Button type="submit" size="lg" className="mt-7 w-full sm:w-auto">
-        Send enquiry
+      <Button type="submit" size="lg" className="mt-7 w-full sm:w-auto" disabled={submitting}>
+        {submitting ? "Sending…" : "Send enquiry"}
       </Button>
       <p className="mt-3 text-xs text-muted-foreground">
         Enquiries are reviewed by the tax professional handling your case. No sensitive documents

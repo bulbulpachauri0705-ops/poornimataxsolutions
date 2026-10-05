@@ -1,4 +1,4 @@
-import { createLazyFileRoute, Link, Outlet, useRouterState } from "@tanstack/react-router";
+import { createLazyFileRoute, Link, Outlet, useRouter, useRouterState } from "@tanstack/react-router";
 import {
   BarChart3,
   BookOpen,
@@ -15,8 +15,9 @@ import {
   Users,
   X,
 } from "lucide-react";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 
+import { supabase } from "@/integrations/supabase/client";
 import { cn } from "@/lib/utils";
 
 const navItems = [
@@ -40,8 +41,47 @@ export const Route = createLazyFileRoute("/admin")({
 
 function AdminLayout() {
   const [sidebarOpen, setSidebarOpen] = useState(false);
+  const [authChecked, setAuthChecked] = useState(false);
+  const [userEmail, setUserEmail] = useState<string | null>(null);
   const routerState = useRouterState();
+  const router = useRouter();
   const currentPath = routerState.location.pathname;
+
+  useEffect(() => {
+    supabase.auth.getSession().then(({ data }) => {
+      const session = data.session;
+      if (!session) {
+        router.navigate({ to: "/admin/login" });
+      } else {
+        setUserEmail(session.user.email ?? null);
+        setAuthChecked(true);
+      }
+    });
+
+    const { data: listener } = supabase.auth.onAuthStateChange((_event, session) => {
+      if (!session) {
+        router.navigate({ to: "/admin/login" });
+      } else {
+        setUserEmail(session.user.email ?? null);
+        setAuthChecked(true);
+      }
+    });
+
+    return () => listener.subscription.unsubscribe();
+  }, [router]);
+
+  async function handleLogout() {
+    await supabase.auth.signOut();
+    router.navigate({ to: "/admin/login" });
+  }
+
+  if (!authChecked) {
+    return (
+      <div className="flex min-h-screen items-center justify-center" style={{ background: "#F4F6F9" }}>
+        <div className="text-sm" style={{ color: "#8A94A6" }}>Checking authentication…</div>
+      </div>
+    );
+  }
 
   return (
     <div className="flex h-screen overflow-hidden" style={{ background: "#F4F6F9" }}>
@@ -94,11 +134,19 @@ function AdminLayout() {
           })}
         </nav>
 
-        <div className="px-3 py-4" style={{ borderTop: "1px solid rgba(255,255,255,0.08)" }}>
+        <div className="px-3 py-4 space-y-0.5" style={{ borderTop: "1px solid rgba(255,255,255,0.08)" }}>
           <Link to="/" className="flex items-center gap-3 rounded-lg px-3 py-2.5 text-sm transition-all hover:bg-white/5" style={{ color: "rgba(255,255,255,0.5)" }}>
-            <LogOut className="size-4" />
+            <FileText className="size-4" />
             Back to Website
           </Link>
+          <button
+            onClick={handleLogout}
+            className="flex w-full items-center gap-3 rounded-lg px-3 py-2.5 text-sm transition-all hover:bg-white/5"
+            style={{ color: "rgba(255,255,255,0.5)" }}
+          >
+            <LogOut className="size-4" />
+            Sign out
+          </button>
         </div>
       </aside>
 
@@ -114,15 +162,13 @@ function AdminLayout() {
             </div>
           </div>
           <div className="flex items-center gap-3">
-            <div className="hidden sm:flex items-center gap-2 rounded-lg px-3 py-2 text-sm" style={{ background: "#F4F6F9", color: "#8A94A6" }}>
-              <Search className="size-4" />
-              <span>Search…</span>
-            </div>
             <div className="flex items-center gap-2">
-              <span className="flex size-9 items-center justify-center rounded-full text-xs font-bold" style={{ background: "#D9A928", color: "#062B49" }}>A</span>
+              <span className="flex size-9 items-center justify-center rounded-full text-xs font-bold" style={{ background: "#D9A928", color: "#062B49" }}>
+                {userEmail ? userEmail[0]?.toUpperCase() : "A"}
+              </span>
               <div className="hidden sm:block">
                 <p className="text-xs font-medium" style={{ color: "#062B49" }}>Admin</p>
-                <p className="text-[10px]" style={{ color: "#8A94A6" }}>Administrator</p>
+                <p className="text-[10px] max-w-[120px] truncate" style={{ color: "#8A94A6" }}>{userEmail ?? "Administrator"}</p>
               </div>
             </div>
           </div>

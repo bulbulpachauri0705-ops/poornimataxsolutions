@@ -6,15 +6,58 @@ export type Json =
   | { [key: string]: Json | undefined }
   | Json[]
 
+export type LeadStatus = "New" | "In Progress" | "Converted" | "Lost";
+
 export type Database = {
-  // Allows to automatically instantiate createClient with right options
-  // instead of createClient<Database, { PostgrestVersion: 'XX' }>(URL, KEY)
   __InternalSupabase: {
     PostgrestVersion: "14.5"
   }
   public: {
     Tables: {
-      [_ in never]: never
+      leads: {
+        Row: {
+          id: string
+          name: string
+          phone: string
+          email: string
+          service: string
+          message: string
+          city: string | null
+          contact_method: string | null
+          status: LeadStatus
+          source: string
+          created_at: string
+          updated_at: string
+        }
+        Insert: {
+          id?: string
+          name: string
+          phone: string
+          email: string
+          service?: string
+          message?: string
+          city?: string | null
+          contact_method?: string | null
+          status?: LeadStatus
+          source?: string
+          created_at?: string
+          updated_at?: string
+        }
+        Update: {
+          id?: string
+          name?: string
+          phone?: string
+          email?: string
+          service?: string
+          message?: string
+          city?: string | null
+          contact_method?: string | null
+          status?: LeadStatus
+          source?: string
+          created_at?: string
+          updated_at?: string
+        }
+      }
     }
     Views: {
       [_ in never]: never
