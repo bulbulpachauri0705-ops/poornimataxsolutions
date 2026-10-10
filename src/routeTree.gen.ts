@@ -25,11 +25,13 @@ import { Route as AdminAppointmentsRouteImport } from './routes/admin.appointmen
 import { Route as AdminBlogsRouteImport } from './routes/admin.blogs'
 import { Route as AdminClientsRouteImport } from './routes/admin.clients'
 import { Route as AdminDocumentsRouteImport } from './routes/admin.documents'
+import { Route as AdminForgotPasswordRouteImport } from './routes/admin.forgot-password'
 import { Route as AdminInquiriesRouteImport } from './routes/admin.inquiries'
 import { Route as AdminInvoicesRouteImport } from './routes/admin.invoices'
 import { Route as AdminLeadsRouteImport } from './routes/admin.leads'
 import { Route as AdminLoginRouteImport } from './routes/admin.login'
 import { Route as AdminReportsRouteImport } from './routes/admin.reports'
+import { Route as AdminResetPasswordRouteImport } from './routes/admin.reset-password'
 import { Route as AdminSeoRouteImport } from './routes/admin.seo'
 import { Route as AdminServicesRouteImport } from './routes/admin.services'
 import { Route as AdminSettingsRouteImport } from './routes/admin.settings'
@@ -118,6 +120,11 @@ const AdminDocumentsRoute = AdminDocumentsRouteImport.update({
   path: '/documents',
   getParentRoute: () => AdminRoute,
 } as any)
+const AdminForgotPasswordRoute = AdminForgotPasswordRouteImport.update({
+  id: '/forgot-password',
+  path: '/forgot-password',
+  getParentRoute: () => AdminRoute,
+} as any)
 const AdminInquiriesRoute = AdminInquiriesRouteImport.update({
   id: '/inquiries',
   path: '/inquiries',
@@ -143,6 +150,11 @@ const AdminReportsRoute = AdminReportsRouteImport.update({
   path: '/reports',
   getParentRoute: () => AdminRoute,
 } as any).lazy(() => import('./routes/admin.reports.lazy').then((d) => d.Route))
+const AdminResetPasswordRoute = AdminResetPasswordRouteImport.update({
+  id: '/reset-password',
+  path: '/reset-password',
+  getParentRoute: () => AdminRoute,
+} as any)
 const AdminSeoRoute = AdminSeoRouteImport.update({
   id: '/seo',
   path: '/seo',
@@ -195,11 +207,13 @@ export interface FileRoutesByFullPath {
   '/admin/blogs': typeof AdminBlogsRoute
   '/admin/clients': typeof AdminClientsRoute
   '/admin/documents': typeof AdminDocumentsRoute
+  '/admin/forgot-password': typeof AdminForgotPasswordRoute
   '/admin/inquiries': typeof AdminInquiriesRoute
   '/admin/invoices': typeof AdminInvoicesRoute
   '/admin/leads': typeof AdminLeadsRoute
   '/admin/login': typeof AdminLoginRoute
   '/admin/reports': typeof AdminReportsRoute
+  '/admin/reset-password': typeof AdminResetPasswordRoute
   '/admin/seo': typeof AdminSeoRoute
   '/admin/services': typeof AdminServicesRoute
   '/admin/settings': typeof AdminSettingsRoute
@@ -222,11 +236,13 @@ export interface FileRoutesByTo {
   '/admin/blogs': typeof AdminBlogsRoute
   '/admin/clients': typeof AdminClientsRoute
   '/admin/documents': typeof AdminDocumentsRoute
+  '/admin/forgot-password': typeof AdminForgotPasswordRoute
   '/admin/inquiries': typeof AdminInquiriesRoute
   '/admin/invoices': typeof AdminInvoicesRoute
   '/admin/leads': typeof AdminLeadsRoute
   '/admin/login': typeof AdminLoginRoute
   '/admin/reports': typeof AdminReportsRoute
+  '/admin/reset-password': typeof AdminResetPasswordRoute
   '/admin/seo': typeof AdminSeoRoute
   '/admin/services': typeof AdminServicesRoute
   '/admin/settings': typeof AdminSettingsRoute
@@ -253,11 +269,13 @@ export interface FileRoutesById {
   '/admin/blogs': typeof AdminBlogsRoute
   '/admin/clients': typeof AdminClientsRoute
   '/admin/documents': typeof AdminDocumentsRoute
+  '/admin/forgot-password': typeof AdminForgotPasswordRoute
   '/admin/inquiries': typeof AdminInquiriesRoute
   '/admin/invoices': typeof AdminInvoicesRoute
   '/admin/leads': typeof AdminLeadsRoute
   '/admin/login': typeof AdminLoginRoute
   '/admin/reports': typeof AdminReportsRoute
+  '/admin/reset-password': typeof AdminResetPasswordRoute
   '/admin/seo': typeof AdminSeoRoute
   '/admin/services': typeof AdminServicesRoute
   '/admin/settings': typeof AdminSettingsRoute
@@ -285,11 +303,13 @@ export interface FileRouteTypes {
     | '/admin/blogs'
     | '/admin/clients'
     | '/admin/documents'
+    | '/admin/forgot-password'
     | '/admin/inquiries'
     | '/admin/invoices'
     | '/admin/leads'
     | '/admin/login'
     | '/admin/reports'
+    | '/admin/reset-password'
     | '/admin/seo'
     | '/admin/services'
     | '/admin/settings'
@@ -312,11 +332,13 @@ export interface FileRouteTypes {
     | '/admin/blogs'
     | '/admin/clients'
     | '/admin/documents'
+    | '/admin/forgot-password'
     | '/admin/inquiries'
     | '/admin/invoices'
     | '/admin/leads'
     | '/admin/login'
     | '/admin/reports'
+    | '/admin/reset-password'
     | '/admin/seo'
     | '/admin/services'
     | '/admin/settings'
@@ -342,11 +364,13 @@ export interface FileRouteTypes {
     | '/admin/blogs'
     | '/admin/clients'
     | '/admin/documents'
+    | '/admin/forgot-password'
     | '/admin/inquiries'
     | '/admin/invoices'
     | '/admin/leads'
     | '/admin/login'
     | '/admin/reports'
+    | '/admin/reset-password'
     | '/admin/seo'
     | '/admin/services'
     | '/admin/settings'
@@ -485,6 +509,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AdminDocumentsRouteImport
       parentRoute: typeof AdminRoute
     }
+    '/admin/forgot-password': {
+      id: '/admin/forgot-password'
+      path: '/forgot-password'
+      fullPath: '/admin/forgot-password'
+      preLoaderRoute: typeof AdminForgotPasswordRouteImport
+      parentRoute: typeof AdminRoute
+    }
     '/admin/inquiries': {
       id: '/admin/inquiries'
       path: '/inquiries'
@@ -518,6 +549,13 @@ declare module '@tanstack/react-router' {
       path: '/reports'
       fullPath: '/admin/reports'
       preLoaderRoute: typeof AdminReportsRouteImport
+      parentRoute: typeof AdminRoute
+    }
+    '/admin/reset-password': {
+      id: '/admin/reset-password'
+      path: '/reset-password'
+      fullPath: '/admin/reset-password'
+      preLoaderRoute: typeof AdminResetPasswordRouteImport
       parentRoute: typeof AdminRoute
     }
     '/admin/seo': {
@@ -577,11 +615,13 @@ interface AdminRouteChildren {
   AdminBlogsRoute: typeof AdminBlogsRoute
   AdminClientsRoute: typeof AdminClientsRoute
   AdminDocumentsRoute: typeof AdminDocumentsRoute
+  AdminForgotPasswordRoute: typeof AdminForgotPasswordRoute
   AdminInquiriesRoute: typeof AdminInquiriesRoute
   AdminInvoicesRoute: typeof AdminInvoicesRoute
   AdminLeadsRoute: typeof AdminLeadsRoute
   AdminLoginRoute: typeof AdminLoginRoute
   AdminReportsRoute: typeof AdminReportsRoute
+  AdminResetPasswordRoute: typeof AdminResetPasswordRoute
   AdminSeoRoute: typeof AdminSeoRoute
   AdminServicesRoute: typeof AdminServicesRoute
   AdminSettingsRoute: typeof AdminSettingsRoute
@@ -593,11 +633,13 @@ const AdminRouteChildren: AdminRouteChildren = {
   AdminBlogsRoute: AdminBlogsRoute,
   AdminClientsRoute: AdminClientsRoute,
   AdminDocumentsRoute: AdminDocumentsRoute,
+  AdminForgotPasswordRoute: AdminForgotPasswordRoute,
   AdminInquiriesRoute: AdminInquiriesRoute,
   AdminInvoicesRoute: AdminInvoicesRoute,
   AdminLeadsRoute: AdminLeadsRoute,
   AdminLoginRoute: AdminLoginRoute,
   AdminReportsRoute: AdminReportsRoute,
+  AdminResetPasswordRoute: AdminResetPasswordRoute,
   AdminSeoRoute: AdminSeoRoute,
   AdminServicesRoute: AdminServicesRoute,
   AdminSettingsRoute: AdminSettingsRoute,

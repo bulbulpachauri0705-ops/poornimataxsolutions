@@ -47,6 +47,12 @@ function AdminLayout() {
   const router = useRouter();
   const currentPath = routerState.location.pathname;
 
+  // Skip auth check on public auth pages to avoid redirect loops
+  const publicAuthPaths = ['/admin/login', '/admin/forgot-password', '/admin/reset-password'];
+  if (publicAuthPaths.includes(currentPath)) {
+    return <Outlet />;
+  }
+
   useEffect(() => {
     supabase.auth.getSession().then(({ data }) => {
       const session = data.session;
