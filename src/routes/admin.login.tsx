@@ -25,9 +25,16 @@ function AdminLogin() {
     e.preventDefault();
     setError("");
     setLoading(true);
+    // Check if we are on localhost and using the demo email
+    const isLocalhost = window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1';
+    let passwordToUse = password;
+    if (isLocalhost && email === 'demo@example.com') {
+      // For demo mode on localhost, use a fixed password
+      passwordToUse = 'DemoPass123';
+    }
     const { error: authError } = await supabase.auth.signInWithPassword({
       email,
-      password,
+      password: passwordToUse,
     });
     setLoading(false);
     if (authError) {

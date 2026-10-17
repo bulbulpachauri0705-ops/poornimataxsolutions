@@ -301,8 +301,44 @@ export const posts: Post[] = [
         ],
       },
     ],
+    // Naya GST blog yahan add hoga
   },
-];
+
+   // Purane GST slab blog ka end
+
+  {
+     slug: "gst-registration-in-mathura",
+    title: "GST Registration in Mathura: Documents and Process",
+    category: "GST",
+    excerpt:
+      "Learn about GST registration in Mathura, required documents and the application process.",
+    publishedAt: "2026-10-17",
+    readingTime: "4 min read",
+    seoTitle: "GST Registration in Mathura: Documents and Process",
+    seoDescription:
+      "Learn about GST registration in Mathura, the required documents and the application process with Poornima Tax Solution.",
+    sections: [
+      {
+        heading: "Documents Required for GST Registration",
+        body: [
+          "Common documents include PAN, identity and address proof, business address proof and other details depending on the business type.",
+        ],
+      },
+      {
+        heading: "GST Registration Process",
+        body: [
+          "Prepare the required documents, apply through the official GST portal, complete verification and respond to any clarification request.",
+        ],
+      },
+      {
+        heading: "GST Registration Help in Mathura",
+        body: [
+          "Poornima Tax Solution can assist businesses in Mathura with GST registration documentation and application support.",
+        ],
+      },
+    ],
+  },
+]
 
 export const postBySlug = (slug: string) =>
   posts.find((p) => p.slug === slug);

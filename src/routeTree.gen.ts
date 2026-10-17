@@ -17,7 +17,6 @@ import { Route as ContactRouteImport } from './routes/contact'
 import { Route as LlmsFullDottxtRouteImport } from './routes/llms-full[.]txt'
 import { Route as PrivacyPolicyRouteImport } from './routes/privacy-policy'
 import { Route as ServicesRouteImport } from './routes/services'
-import { Route as SitemapDotxmlRouteImport } from './routes/sitemap[.]xml'
 import { Route as TermsRouteImport } from './routes/terms'
 import { Route as WhyUsRouteImport } from './routes/why-us'
 import { Route as AdminIndexRouteImport } from './routes/admin.index'
@@ -78,11 +77,6 @@ const PrivacyPolicyRoute = PrivacyPolicyRouteImport.update({
 const ServicesRoute = ServicesRouteImport.update({
   id: '/services',
   path: '/services',
-  getParentRoute: () => rootRouteImport,
-} as any)
-const SitemapDotxmlRoute = SitemapDotxmlRouteImport.update({
-  id: '/sitemap.xml',
-  path: '/sitemap.xml',
   getParentRoute: () => rootRouteImport,
 } as any)
 const TermsRoute = TermsRouteImport.update({
@@ -200,7 +194,6 @@ export interface FileRoutesByFullPath {
   '/llms-full.txt': typeof LlmsFullDottxtRoute
   '/privacy-policy': typeof PrivacyPolicyRoute
   '/services': typeof ServicesRouteWithChildren
-  '/sitemap.xml': typeof SitemapDotxmlRoute
   '/terms': typeof TermsRoute
   '/why-us': typeof WhyUsRoute
   '/admin/appointments': typeof AdminAppointmentsRoute
@@ -229,7 +222,6 @@ export interface FileRoutesByTo {
   '/contact': typeof ContactRoute
   '/llms-full.txt': typeof LlmsFullDottxtRoute
   '/privacy-policy': typeof PrivacyPolicyRoute
-  '/sitemap.xml': typeof SitemapDotxmlRoute
   '/terms': typeof TermsRoute
   '/why-us': typeof WhyUsRoute
   '/admin/appointments': typeof AdminAppointmentsRoute
@@ -262,7 +254,6 @@ export interface FileRoutesById {
   '/llms-full.txt': typeof LlmsFullDottxtRoute
   '/privacy-policy': typeof PrivacyPolicyRoute
   '/services': typeof ServicesRouteWithChildren
-  '/sitemap.xml': typeof SitemapDotxmlRoute
   '/terms': typeof TermsRoute
   '/why-us': typeof WhyUsRoute
   '/admin/appointments': typeof AdminAppointmentsRoute
@@ -296,7 +287,6 @@ export interface FileRouteTypes {
     | '/llms-full.txt'
     | '/privacy-policy'
     | '/services'
-    | '/sitemap.xml'
     | '/terms'
     | '/why-us'
     | '/admin/appointments'
@@ -325,7 +315,6 @@ export interface FileRouteTypes {
     | '/contact'
     | '/llms-full.txt'
     | '/privacy-policy'
-    | '/sitemap.xml'
     | '/terms'
     | '/why-us'
     | '/admin/appointments'
@@ -357,7 +346,6 @@ export interface FileRouteTypes {
     | '/llms-full.txt'
     | '/privacy-policy'
     | '/services'
-    | '/sitemap.xml'
     | '/terms'
     | '/why-us'
     | '/admin/appointments'
@@ -390,7 +378,6 @@ export interface RootRouteChildren {
   LlmsFullDottxtRoute: typeof LlmsFullDottxtRoute
   PrivacyPolicyRoute: typeof PrivacyPolicyRoute
   ServicesRoute: typeof ServicesRouteWithChildren
-  SitemapDotxmlRoute: typeof SitemapDotxmlRoute
   TermsRoute: typeof TermsRoute
   WhyUsRoute: typeof WhyUsRoute
 }
@@ -451,13 +438,6 @@ declare module '@tanstack/react-router' {
       path: '/services'
       fullPath: '/services'
       preLoaderRoute: typeof ServicesRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/sitemap.xml': {
-      id: '/sitemap.xml'
-      path: '/sitemap.xml'
-      fullPath: '/sitemap.xml'
-      preLoaderRoute: typeof SitemapDotxmlRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/terms': {
@@ -683,7 +663,6 @@ const rootRouteChildren: RootRouteChildren = {
   LlmsFullDottxtRoute: LlmsFullDottxtRoute,
   PrivacyPolicyRoute: PrivacyPolicyRoute,
   ServicesRoute: ServicesRouteWithChildren,
-  SitemapDotxmlRoute: SitemapDotxmlRoute,
   TermsRoute: TermsRoute,
   WhyUsRoute: WhyUsRoute,
 }
