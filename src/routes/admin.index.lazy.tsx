@@ -14,7 +14,7 @@ import { useEffect, useState } from "react";
 import { Bar, BarChart, ResponsiveContainer, Tooltip, XAxis, YAxis } from "recharts";
 
 import { getLeadStats, getLeads } from "@/lib/leads.server";
-import { adminBlogs, dashboardStats } from "@/data/admin";
+import { adminBlogs } from "@/data/admin";
 
 export const Route = createLazyFileRoute("/admin/")({
   component: AdminDashboard,

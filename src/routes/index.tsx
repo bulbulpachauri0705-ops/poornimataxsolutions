@@ -61,7 +61,18 @@ export const Route = createFileRoute("/")({
       path: "/",
     }),
 
-    links: canonical("/"),
+    links: [
+      ...canonical("/"),
+      // Preload the LCP hero image so the browser starts fetching it in
+      // parallel with the stylesheet instead of after the HTML is parsed.
+      {
+        rel: "preload",
+        href: heroImg,
+        as: "image",
+        type: "image/webp",
+        fetchPriority: "high",
+      },
+    ],
 
     scripts: [
       // Business / Local SEO schema
@@ -148,7 +159,9 @@ function Home() {
             src={heroImg}
             alt="Poornima Tax Solution tax and compliance consultant in Mathura"
             width={800}
-            height={960}
+            height={600}
+            fetchPriority="high"
+            decoding="async"
             className="aspect-[4/3] w-full rounded-sm object-cover object-center shadow-lg"
           />
         </div>

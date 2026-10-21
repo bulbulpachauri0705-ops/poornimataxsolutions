@@ -12,10 +12,22 @@ type LeadUpdate = Database["public"]["Tables"]["leads"]["Update"];
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 type AnyClient = SupabaseClient<any>;
 
-function getAdminClient(): AnyClient {
+/**
+ * Public (anonymous) Supabase client.
+ *
+ * Used ONLY by the public "submit a lead" endpoint. The RLS policy
+ * "Anyone can submit a lead" (supabase/migrations/…_create_leads.sql) allows
+ * anonymous INSERTs, so no service-role key is required here and no
+ * privileged credential has to be present in the runtime environment.
+ */
+function getPublicClient(): AnyClient {
   const url = process.env["SUPABASE_URL"];
-  const key = process.env["SUPABASE_SERVICE_ROLE_KEY"];
-  if (!url || !key) throw new Error("Missing SUPABASE_URL or SUPABASE_SERVICE_ROLE_KEY");
+  const key = process.env["SUPABASE_PUBLISHABLE_KEY"];
+  if (!url || !key) {
+    throw new Error(
+      "Server is missing SUPABASE_URL or SUPABASE_PUBLISHABLE_KEY. Add both to the server environment.",
+    );
+  }
   return createClient(url, key, {
     auth: { persistSession: false, autoRefreshToken: false },
   });
@@ -35,9 +47,17 @@ const LeadInsertSchema = z.object({
 
 // ── PUBLIC: submit a lead from the website ──────────────────────
 export const submitLead = createServerFn({ method: "POST" })
-  .validator((data: unknown) => LeadInsertSchema.parse(data))
+  .validator((data: unknown) => {
+    const parsed = LeadInsertSchema.safeParse(data);
+    if (!parsed.success) {
+      // Never leak the raw Zod payload to the browser; the form already
+      // highlights individual fields client-side.
+      throw new Error("Some details look invalid. Please check the form and try again.");
+    }
+    return parsed.data;
+  })
   .handler(async ({ data }) => {
-    const supabase = getAdminClient();
+    const supabase = getPublicClient();
     const insert: LeadInsert = {
       name: data.name,
       phone: data.phone,
@@ -50,20 +70,28 @@ export const submitLead = createServerFn({ method: "POST" })
       source: "Website",
     };
     const { error } = await supabase.from("leads").insert(insert);
-    if (error) throw new Error(error.message);
+    if (error) {
+      console.error("[leads] insert failed:", error.message, error.code);
+      throw new Error("We could not save your enquiry. Please try again.");
+    }
     return { success: true };
   });
 
 // ── ADMIN: fetch all leads ──────────────────────────────────────
+// Uses the signed-in admin's own JWT (supplied by requireSupabaseAuth), so the
+// RLS policies "Authenticated users can view/update/delete leads" apply and no
+// service-role key is needed.
 export const getLeads = createServerFn({ method: "GET" })
   .middleware([requireSupabaseAuth])
-  .handler(async (): Promise<LeadRow[]> => {
-    const supabase = getAdminClient();
-    const { data, error } = await supabase
+  .handler(async ({ context }): Promise<LeadRow[]> => {
+    const { data, error } = await context.supabase
       .from("leads")
       .select("*")
       .order("created_at", { ascending: false });
-    if (error) throw new Error(error.message);
+    if (error) {
+      console.error("[leads] select failed:", error.message, error.code);
+      throw new Error("Could not load leads.");
+    }
     return (data ?? []) as LeadRow[];
   });
 
@@ -83,15 +111,17 @@ export const updateLead = createServerFn({ method: "POST" })
       })
       .parse(data),
   )
-  .handler(async ({ data }) => {
-    const supabase = getAdminClient();
+  .handler(async ({ data, context }) => {
     const { id, ...fields } = data;
     // Strip undefined values to satisfy exactOptionalPropertyTypes
     const update: LeadUpdate = Object.fromEntries(
       Object.entries(fields).filter(([, v]) => v !== undefined),
     ) as LeadUpdate;
-    const { error } = await supabase.from("leads").update(update).eq("id", id);
-    if (error) throw new Error(error.message);
+    const { error } = await context.supabase.from("leads").update(update).eq("id", id);
+    if (error) {
+      console.error("[leads] update failed:", error.message, error.code);
+      throw new Error("Could not save the lead.");
+    }
     return { success: true };
   });
 
@@ -99,27 +129,31 @@ export const updateLead = createServerFn({ method: "POST" })
 export const deleteLead = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
   .validator((data: unknown) => z.object({ id: z.string().uuid() }).parse(data))
-  .handler(async ({ data }) => {
-    const supabase = getAdminClient();
-    const { error } = await supabase.from("leads").delete().eq("id", data.id);
-    if (error) throw new Error(error.message);
+  .handler(async ({ data, context }) => {
+    const { error } = await context.supabase.from("leads").delete().eq("id", data.id);
+    if (error) {
+      console.error("[leads] delete failed:", error.message, error.code);
+      throw new Error("Could not delete the lead.");
+    }
     return { success: true };
   });
 
 // ── ADMIN: dashboard stats ──────────────────────────────────────
 export const getLeadStats = createServerFn({ method: "GET" })
   .middleware([requireSupabaseAuth])
-  .handler(async () => {
-    const supabase = getAdminClient();
+  .handler(async ({ context }) => {
     const now = new Date();
     const todayStart = new Date(now.getFullYear(), now.getMonth(), now.getDate()).toISOString();
     const weekStart = new Date(now.getTime() - 7 * 24 * 60 * 60 * 1000).toISOString();
     const monthStart = new Date(now.getFullYear(), now.getMonth(), 1).toISOString();
 
-    const { data, error } = await supabase
+    const { data, error } = await context.supabase
       .from("leads")
       .select("id, status, created_at, service");
-    if (error) throw new Error(error.message);
+    if (error) {
+      console.error("[leads] stats failed:", error.message, error.code);
+      throw new Error("Could not load dashboard stats.");
+    }
 
     type Row = { id: string; status: LeadStatus; created_at: string; service: string };
     const all = (data ?? []) as Row[];

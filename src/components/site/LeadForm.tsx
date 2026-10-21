@@ -23,9 +23,14 @@ export function LeadForm() {
   const [errors, setErrors] = useState<Errors>({});
   const [sent, setSent] = useState(false);
   const [submitting, setSubmitting] = useState(false);
+  const [submitError, setSubmitError] = useState("");
 
   async function onSubmit(event: React.FormEvent<HTMLFormElement>) {
     event.preventDefault();
+
+    // Guard against double submissions (double click, Enter key repeat).
+    if (submitting) return;
+
     const form = event.currentTarget;
     const data = new FormData(form);
 
@@ -47,6 +52,7 @@ export function LeadForm() {
     if (message.length < 10) next.message = "Tell us a little more about your requirement.";
 
     setErrors(next);
+    setSubmitError("");
     if (Object.keys(next).length > 0) {
       toast.error("Please correct the highlighted fields.");
       return;
@@ -69,8 +75,14 @@ export function LeadForm() {
       toast.success("Thank you. Your enquiry has been received.");
       form.reset();
       setService("");
-    } catch {
-      toast.error("Something went wrong. Please try again or call us directly.");
+      setErrors({});
+    } catch (err) {
+      const message =
+        err instanceof Error && err.message
+          ? err.message
+          : "Something went wrong. Please try again or call us directly.";
+      setSubmitError(message);
+      toast.error("We could not send your enquiry. Please try again.");
     } finally {
       setSubmitting(false);
     }
@@ -192,9 +204,22 @@ export function LeadForm() {
         <input id="company_website" name="company_website" tabIndex={-1} autoComplete="off" />
       </div>
 
+      {submitError && (
+        <div
+          role="alert"
+          aria-live="assertive"
+          className="mt-5 rounded-lg border border-destructive/40 bg-destructive/5 p-3 text-sm text-destructive"
+        >
+          {submitError}
+        </div>
+      )}
+
       <Button type="submit" size="lg" className="mt-7 w-full sm:w-auto" disabled={submitting}>
         {submitting ? "Sending…" : "Send enquiry"}
       </Button>
+      <p aria-live="polite" className="sr-only">
+        {submitting ? "Sending your enquiry, please wait." : ""}
+      </p>
       <p className="mt-3 text-xs text-muted-foreground">
         Enquiries are reviewed by the tax professional handling your case. No sensitive documents
         should be sent through this form.

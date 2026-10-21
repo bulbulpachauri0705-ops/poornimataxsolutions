@@ -79,7 +79,10 @@ function AdminLeads() {
       const data = await getLeads();
       setLeads(data as Lead[]);
     } catch (e) {
-      setError(e instanceof Error ? e.message : "Failed to load leads.");
+      console.error("[admin/leads] failed to load leads:", e);
+      setError(
+        "We could not load leads from the database. Check your Supabase connection and RLS policies, then refresh.",
+      );
     } finally {
       setLoading(false);
     }

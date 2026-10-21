@@ -18,7 +18,14 @@ import {
 import { useEffect, useState } from "react";
 
 import { supabase } from "@/integrations/supabase/client";
+import { isLocalDevBrowser } from "@/lib/local-dev";
 import { cn } from "@/lib/utils";
+
+const PUBLIC_AUTH_PATHS = [
+  "/admin/login",
+  "/admin/forgot-password",
+  "/admin/reset-password",
+];
 
 const navItems = [
   { to: "/admin", label: "Dashboard", icon: LayoutDashboard, exact: true },
@@ -47,13 +54,30 @@ function AdminLayout() {
   const router = useRouter();
   const currentPath = routerState.location.pathname;
 
-  // Skip auth check on public auth pages to avoid redirect loops
-  const publicAuthPaths = ['/admin/login', '/admin/forgot-password', '/admin/reset-password'];
-  if (publicAuthPaths.includes(currentPath)) {
-    return <Outlet />;
-  }
+  const isPublicAuthPath = PUBLIC_AUTH_PATHS.includes(currentPath);
+
+  // Local development only: open the dashboard directly instead of the login
+  // screen. `isLocalDevBrowser()` is statically `false` in a production
+  // build, so this branch does not exist on the deployed site.
+  const devBypass = isLocalDevBrowser();
 
   useEffect(() => {
+    // The login / forgot / reset pages are not behind the guard.
+    if (isPublicAuthPath) return;
+
+    if (devBypass) {
+      // Still pick up a real session if one exists, so the server functions
+      // can use the admin's own token when it is available.
+      supabase.auth
+        .getSession()
+        .then(({ data }) => {
+          setUserEmail(data.session?.user.email ?? "local developer");
+          setAuthChecked(true);
+        })
+        .catch(() => setAuthChecked(true));
+      return;
+    }
+
     supabase.auth.getSession().then(({ data }) => {
       const session = data.session;
       if (!session) {
@@ -74,11 +98,20 @@ function AdminLayout() {
     });
 
     return () => listener.subscription.unsubscribe();
-  }, [router]);
+  }, [router, isPublicAuthPath, devBypass]);
+
+  // Note: this early return must stay *after* the hooks above, otherwise the
+  // hook order changes between /admin/login and /admin and React throws
+  // "Rendered more hooks than during the previous render".
+  if (isPublicAuthPath) {
+    return <Outlet />;
+  }
 
   async function handleLogout() {
     await supabase.auth.signOut();
-    router.navigate({ to: "/admin/login" });
+    // In local development there is no real session to return to, so go back
+    // to the public site instead of the login screen.
+    router.navigate({ to: devBypass ? "/" : "/admin/login" });
   }
 
   if (!authChecked) {

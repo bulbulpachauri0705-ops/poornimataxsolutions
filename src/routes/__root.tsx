@@ -117,18 +117,22 @@ export const Route =
           href: "/favicon.ico",
           type: "image/x-icon",
         },
+        // Self-hosted fonts: preloading the two latin subsets lets the browser
+        // start the font download before the stylesheet is parsed, without the
+        // extra cross-origin stylesheet round-trip Google Fonts required.
         {
-          rel: "preconnect",
-          href: "https://fonts.googleapis.com",
-        },
-        {
-          rel: "preconnect",
-          href: "https://fonts.gstatic.com",
+          rel: "preload",
+          href: "/fonts/dm-sans-latin.woff2",
+          as: "font",
+          type: "font/woff2",
           crossOrigin: "anonymous",
         },
         {
-          rel: "stylesheet",
-          href: "https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600&family=Playfair+Display:wght@500;600&display=swap",
+          rel: "preload",
+          href: "/fonts/playfair-latin.woff2",
+          as: "font",
+          type: "font/woff2",
+          crossOrigin: "anonymous",
         },
       ],
       scripts: [ldScript(organizationLd)],

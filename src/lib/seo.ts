@@ -1,6 +1,6 @@
-import { site, telHref } from "@/data/site";
+﻿import { site, telHref } from "@/data/site";
 
-export const BASE_URL = "https://poornimataxsolutions.com";
+export const BASE_URL = "https://www.poornimataxsolutions.com";
 export const abs = (path: string) => `${BASE_URL}${path}`;
 
 type Meta = Record<string, string>;
@@ -16,7 +16,7 @@ export function pageMeta({
   path,
   type = "website",
   image = "/og-image.jpg",
-  imageAlt = "Poornima Tax Solution — tax and compliance consultancy in Mathura, India",
+  imageAlt = "Poornima Tax Solution â€” tax and compliance consultancy in Mathura, India",
 }: {
   title: string;
   description: string;
@@ -135,3 +135,4 @@ export const howToLd = (
     text: s.detail,
   })),
 });
+

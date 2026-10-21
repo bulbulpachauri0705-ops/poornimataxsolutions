@@ -24,27 +24,50 @@ function ResetPassword() {
 
   useEffect(() => {
     async function verifyToken() {
-      const hash = window.location.hash.substring(1);
-      const params = new URLSearchParams(hash);
-      const token = params.get("access_token");
-      const type = params.get("type");
+      const invalid = "Invalid or expired reset link. Please request a new one.";
+      const hashParams = new URLSearchParams(window.location.hash.replace(/^#/, ""));
+      const searchParams = new URLSearchParams(window.location.search);
+      const code = searchParams.get("code");
+      const tokenHash = searchParams.get("token_hash");
 
-      if (!token || type !== "recovery") {
-        setError("Invalid or expired reset link. Please request a new one.");
+      // PKCE flow: the link carries ?code=... which must be exchanged for a session.
+      if (code) {
+        const { error: exchangeError } = await supabase.auth.exchangeCodeForSession(code);
+        if (exchangeError) {
+          setError(invalid);
+          return;
+        }
+        setVerified(true);
         return;
       }
 
-      const { error: verifyError } = await supabase.auth.verifyOTP({
-        token,
-        type: "recovery",
-      });
-
-      if (verifyError) {
-        setError("Invalid or expired reset link. Please request a new one.");
+      // token_hash flow: verify the one-time token directly.
+      if (tokenHash) {
+        const { error: verifyError } = await supabase.auth.verifyOtp({
+          token_hash: tokenHash,
+          type: "recovery",
+        });
+        if (verifyError) {
+          setError(invalid);
+          return;
+        }
+        setVerified(true);
         return;
       }
 
-      setVerified(true);
+      // Implicit flow: the link carries #access_token=...&type=recovery.
+      // The Supabase client detects and verifies this automatically on init.
+      if (hashParams.get("type") === "recovery" && hashParams.get("access_token")) {
+        const { data, error: sessionError } = await supabase.auth.getSession();
+        if (sessionError || !data.session) {
+          setError(invalid);
+          return;
+        }
+        setVerified(true);
+        return;
+      }
+
+      setError(invalid);
     }
 
     verifyToken();

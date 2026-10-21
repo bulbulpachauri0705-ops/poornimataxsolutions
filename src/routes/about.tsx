@@ -26,7 +26,7 @@ function About() {
       <PageHero eyebrow="About us" title={`About ${site.name}`} intro={`${site.tagline} We are a tax and compliance practice built on accuracy, clear communication and filing on time.`} crumbs={[{ label: "Home", to: "/" }]} />
       <Section>
         <div className="grid items-center gap-12 md:grid-cols-2">
-          <img src={aboutImg} alt="Poornima Pachauri seated in her tax and legal consultancy office" width={768} height={1024} loading="lazy" className="aspect-[4/3] w-full rounded-sm object-cover object-center" />
+          <img src={aboutImg} alt="Poornima Pachauri seated in her tax and legal consultancy office" width={768} height={576} loading="lazy" decoding="async" className="aspect-[4/3] w-full rounded-sm object-cover object-center" />
           <div>
             <SectionHeading eyebrow="Who we are" title="Tax support that stays with you" />
             <p className="mt-5 text-base/8 text-foreground/85">{site.description}</p>
